@@ -50,7 +50,6 @@ export default {
         hint: {
           DEFAULT: "hsl(var(--hint))",
           foreground: "hsl(var(--hint-foreground))",
-          glow: "hsl(var(--hint-glow))",
         },
         progress: {
           DEFAULT: "hsl(var(--progress))",
@@ -59,12 +58,6 @@ export default {
         workspace: {
           DEFAULT: "hsl(var(--workspace))",
           foreground: "hsl(var(--workspace-foreground))",
-        },
-        neon: {
-          cyan: "hsl(var(--neon-cyan))",
-          purple: "hsl(var(--neon-purple))",
-          pink: "hsl(var(--neon-pink))",
-          yellow: "hsl(var(--neon-yellow))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
@@ -140,16 +133,6 @@ export default {
         "gradient-secondary": "var(--gradient-secondary)", 
         "gradient-accent": "var(--gradient-accent)",
         "gradient-bg": "var(--gradient-bg)",
-        "gradient-card": "var(--gradient-card)",
-        "gradient-glow": "var(--gradient-glow)",
-      },
-      boxShadow: {
-        "neon": "var(--shadow-neon)",
-        "glow": "var(--shadow-glow)",
-        "card": "var(--shadow-card)",
-      },
-      backdropBlur: {
-        "glass": "var(--blur-glass)",
       },
     },
   },

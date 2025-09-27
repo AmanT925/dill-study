@@ -51,120 +51,79 @@ export const PDFUploader: React.FC<PDFUploaderProps> = ({
   });
 
   return (
-    <div className="w-full max-w-5xl mx-auto space-y-8 relative">
-      {/* Animated background elements */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute top-10 left-10 w-72 h-72 bg-gradient-primary opacity-20 rounded-full blur-3xl floating-animation"></div>
-        <div className="absolute top-32 right-16 w-96 h-96 bg-gradient-secondary opacity-15 rounded-full blur-3xl floating-animation" style={{ animationDelay: '2s' }}></div>
-        <div className="absolute bottom-20 left-32 w-64 h-64 bg-gradient-accent opacity-25 rounded-full blur-3xl floating-animation" style={{ animationDelay: '4s' }}></div>
-      </div>
-
-      <div className="text-center space-y-6 relative z-10">
-        <div className="space-y-4">
-          <h1 className="text-6xl font-bold gradient-text leading-tight">
-            AI Problem Solver
-          </h1>
-          <div className="w-24 h-1 bg-gradient-primary mx-auto rounded-full"></div>
-        </div>
-        <p className="text-xl text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-          Upload your homework PDF and get personalized, step-by-step guidance without spoilers. 
-          Experience the future of learning with AI-powered assistance.
+    <div className="w-full max-w-4xl mx-auto space-y-6">
+      <div className="text-center space-y-4">
+        <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
+          AI Problem Solver
+        </h1>
+        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          Upload your homework PDF and get personalized, step-by-step guidance without spoilers
         </p>
       </div>
 
       <Card
         {...getRootProps()}
         className={`
-          glass-card relative overflow-hidden border-2 border-dashed transition-all duration-500 cursor-pointer hover-glow
+          relative overflow-hidden border-2 border-dashed transition-all duration-300 cursor-pointer
           ${isDragActive 
-            ? 'border-neon-purple bg-gradient-glow scale-105 neon-glow' 
-            : 'border-white/20 hover:border-neon-purple/60'
+            ? 'border-primary bg-primary/5 scale-105' 
+            : 'border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/50'
           }
-          ${isUploading ? 'pointer-events-none' : ''}
+          ${isUploading ? 'pointer-events-none opacity-60' : ''}
         `}
       >
         <input {...getInputProps()} />
         
-        {/* Animated border effect */}
-        <div className="absolute inset-0 rounded-lg bg-gradient-primary opacity-0 transition-opacity duration-300" 
-             style={{ 
-               backgroundSize: '200% 200%',
-               animation: isDragActive ? 'gradient-shift 2s ease infinite' : 'none'
-             }}>
-        </div>
-        
-        <div className="relative z-10 p-16 text-center space-y-8">
+        <div className="p-12 text-center space-y-6">
           {isUploading ? (
-            <div className="space-y-6">
-              <div className="relative">
-                <div className="w-24 h-24 mx-auto bg-gradient-primary rounded-full flex items-center justify-center pulse-glow">
-                  <Upload className="w-12 h-12 text-white animate-pulse" />
-                </div>
-                <div className="absolute inset-0 w-24 h-24 mx-auto border-4 border-neon-purple border-t-transparent rounded-full animate-spin"></div>
+            <div className="space-y-4">
+              <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
+                <Upload className="w-8 h-8 text-primary animate-pulse" />
               </div>
-              <div className="space-y-2">
-                <h3 className="text-2xl font-bold text-foreground">Processing your PDF...</h3>
-                <p className="text-muted-foreground">Our AI is analyzing your document with precision</p>
-                <div className="w-64 h-2 bg-muted/30 rounded-full mx-auto overflow-hidden">
-                  <div className="h-full bg-gradient-primary rounded-full animate-pulse" style={{ width: '70%' }}></div>
-                </div>
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">Processing your PDF...</h3>
+                <p className="text-muted-foreground">This may take a few moments</p>
               </div>
             </div>
           ) : (
-            <div className="space-y-6">
-              <div className="relative">
-                <div className="w-24 h-24 mx-auto bg-gradient-card rounded-full flex items-center justify-center hover-glow">
-                  <FileText className="w-12 h-12 text-neon-purple" />
-                </div>
-                <div className="absolute -inset-2 w-28 h-28 mx-auto border border-neon-purple/30 rounded-full animate-ping"></div>
+            <div className="space-y-4">
+              <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
+                <FileText className="w-8 h-8 text-primary" />
               </div>
-              <div className="space-y-3">
-                <h3 className="text-2xl font-bold text-foreground">
-                  {isDragActive ? '✨ Drop your PDF here' : '📁 Drag & drop your PDF here'}
+              <div>
+                <h3 className="text-lg font-semibold text-foreground">
+                  {isDragActive ? 'Drop your PDF here' : 'Drag & drop your PDF here'}
                 </h3>
-                <p className="text-lg text-muted-foreground">
-                  or click to select a file • Max 20MB • PDF format
+                <p className="text-muted-foreground">
+                  or click to select a file • Max 20MB
                 </p>
-                <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground/80">
-                  <div className="w-2 h-2 bg-secondary rounded-full animate-pulse"></div>
-                  <span>Supports: Mathematical equations, diagrams, text</span>
-                  <div className="w-2 h-2 bg-secondary rounded-full animate-pulse"></div>
-                </div>
               </div>
             </div>
           )}
         </div>
 
         {isDragActive && (
-          <div className="absolute inset-0 bg-gradient-glow border-2 border-neon-purple border-dashed rounded-lg animate-pulse" />
+          <div className="absolute inset-0 bg-primary/5 border-2 border-primary border-dashed rounded-lg" />
         )}
       </Card>
 
-      <div className="flex flex-col sm:flex-row gap-6 items-center justify-center relative z-10">
-        <Button variant="outline" disabled={isUploading} className="glass-card hover-glow border-white/20 hover:border-neon-cyan/60 group">
-          <Upload className="w-4 h-4 mr-2 group-hover:text-neon-cyan transition-colors" />
+      <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
+        <Button variant="outline" disabled={isUploading}>
+          <Upload className="w-4 h-4 mr-2" />
           Import from Google Drive
         </Button>
-        <Button variant="outline" disabled={isUploading} className="glass-card hover-glow border-white/20 hover:border-neon-pink/60 group">
-          <FileText className="w-4 h-4 mr-2 group-hover:text-neon-pink transition-colors" />
+        <Button variant="outline" disabled={isUploading}>
+          <FileText className="w-4 h-4 mr-2" />
           Import from URL
         </Button>
       </div>
 
-      <div className="glass-card rounded-xl p-6 space-y-3 relative z-10">
-        <div className="flex items-start gap-4">
-          <div className="w-6 h-6 bg-gradient-accent rounded-full flex items-center justify-center flex-shrink-0 mt-0.5">
-            <AlertCircle className="w-4 h-4 text-white" />
-          </div>
-          <div className="space-y-2 text-sm">
-            <p className="font-semibold text-foreground flex items-center gap-2">
-              🔒 Privacy & Data Policy
-              <span className="px-2 py-1 bg-secondary/20 text-secondary rounded-full text-xs">Secure</span>
-            </p>
-            <p className="text-muted-foreground leading-relaxed">
-              Your PDFs are processed with enterprise-grade security. Audio recordings are optional and can be disabled in settings. 
-              All data is encrypted and never shared with third parties.
-            </p>
+      <div className="bg-muted/50 rounded-lg p-4 space-y-2">
+        <div className="flex items-start gap-3">
+          <AlertCircle className="w-5 h-5 text-hint mt-0.5 flex-shrink-0" />
+          <div className="space-y-1 text-sm text-muted-foreground">
+            <p className="font-medium text-foreground">Privacy & Data Policy</p>
+            <p>Your PDFs are processed locally when possible. Audio recordings are optional and can be disabled in settings.</p>
           </div>
         </div>
       </div>
