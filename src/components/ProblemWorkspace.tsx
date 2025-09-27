@@ -20,6 +20,7 @@ import {
   Settings
 } from 'lucide-react';
 import { Problem, useStore } from '@/lib/store';
+import { PDFViewer } from '@/components/PDFViewer';
 import { getGuidance, streamGuidance } from '@/lib/aiGuidance';
 import ReactMarkdown from 'react-markdown';
 import type { Components } from 'react-markdown';
@@ -177,16 +178,16 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
           )}
         </div>
 
-        {/* PDF Viewer */}
-        <Card className="flex-1 bg-card flex items-center justify-center">
-            <div className="text-center space-y-2">
-            <FileText className="w-12 h-12 mx-auto" />
-            <p className="text-sm text-muted-foreground">PDF Viewer</p>
-            <p className="text-xs text-muted-foreground">
-              Problem highlighted on page {liveProblem.pageNumber}
-            </p>
-          </div>
-        </Card>
+        {/* PDF Viewer (problem-specific pages) */}
+        <div className="h-[55vh]">
+          <PDFViewer 
+            fileUrl={useStore.getState().currentPDF?.fileUrl || ''}
+            totalPages={useStore.getState().currentPDF?.totalPages || liveProblem.pageNumber}
+            highlightPage={liveProblem.pageNumber}
+            pages={[liveProblem.pageNumber]}
+            className="h-full"
+          />
+        </div>
 
         {/* Editable Problem Text */}
         <Card className="p-4">

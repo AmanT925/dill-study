@@ -15,6 +15,7 @@ import {
   Hash
 } from 'lucide-react';
 import { ParsedPDF, Problem } from '@/lib/store';
+import { PDFViewer } from '@/components/PDFViewer';
 
 interface ProblemParsingPreviewProps {
   pdf: ParsedPDF;
@@ -40,35 +41,37 @@ export const ProblemParsingPreview: React.FC<ProblemParsingPreviewProps> = ({
   return (
     <div className="flex h-screen bg-workspace">
       {/* Left side - PDF Preview */}
-      <div className="w-1/2 border-r border-border p-6">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
+      <div className="w-1/2 border-r border-border p-4 flex flex-col gap-4">
+        <div className="flex items-center justify-between pr-1">
+          <div>
             <h2 className="text-lg font-semibold text-workspace-foreground">PDF Preview</h2>
-            <Button variant="outline" size="sm" onClick={onRerunOCR}>
-              <RefreshCw className="w-4 h-4 mr-2" />
-              Re-run OCR
-            </Button>
+            <p className="text-xs text-muted-foreground mt-0.5">{pdf.totalPages} pages • {pdf.fileName}</p>
           </div>
-          
-          <Card className="aspect-[3/4] bg-card flex items-center justify-center">
-              <div className="text-center space-y-2">
-              <FileText className="w-12 h-12 mx-auto" />
-              <p className="text-sm text-muted-foreground">PDF Viewer</p>
-              <p className="text-xs text-muted-foreground">
-                {pdf.totalPages} pages • {pdf.fileName}
-              </p>
-            </div>
-          </Card>
-          
-          {selectedProblem && (
-            <div className="bg-primary/5 border border-primary/20 rounded-lg p-3">
-              <p className="text-sm font-medium text-primary">Selected Problem</p>
-              <p className="text-xs text-primary/80">
-                Page {selectedProblem.pageNumber} • {selectedProblem.text.slice(0, 100)}...
-              </p>
-            </div>
-          )}
+          <Button variant="outline" size="sm" onClick={onRerunOCR}>
+            <RefreshCw className="w-4 h-4 mr-2" />
+            Re-run OCR
+          </Button>
         </div>
+
+        <div className="flex-1 min-h-0">
+          <PDFViewer 
+            fileUrl={pdf.fileUrl}
+            totalPages={pdf.totalPages}
+            highlightPage={selectedProblem?.pageNumber}
+            className="h-full"
+          />
+        </div>
+
+        {selectedProblem && (
+          <Card className="bg-primary/5 border-primary/30 p-3">
+            <p className="text-sm font-medium text-primary flex items-center gap-2">
+              <Hash className="w-3 h-3" /> Page {selectedProblem.pageNumber}
+            </p>
+            <p className="text-xs text-primary/80 mt-1 line-clamp-2">
+              {selectedProblem.text.slice(0, 160)}{selectedProblem.text.length > 160 && '...'}
+            </p>
+          </Card>
+        )}
       </div>
 
       {/* Right side - Problems List */}
