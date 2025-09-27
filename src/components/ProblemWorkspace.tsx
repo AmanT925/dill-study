@@ -394,7 +394,7 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
               <Button
                 onClick={handleGuidanceSubmit}
                 disabled={isLoadingGuidance || !currentAttempt.trim()}
-                className="w-full h-12 text-base font-semibold bg-gradient-to-r from-gradient-primary to-gradient-accent hover:opacity-90"
+                className="w-full h-12 text-base font-semibold bg-primary text-primary-foreground hover:bg-primary-dark"
               >
                 <Send className="w-5 h-5 mr-2" />
                 {isLoadingGuidance ? 'Thinking…' : 'Ask AI'}

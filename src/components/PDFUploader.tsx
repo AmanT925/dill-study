@@ -53,7 +53,7 @@ export const PDFUploader: React.FC<PDFUploaderProps> = ({
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
       <div className="text-center space-y-4">
-        <div className="mx-auto w-40 h-40 sm:w-52 sm:h-52">
+        <div className="mx-auto w-80 h-80 sm:w-52 sm:h-52">
           <img src="/ui/logo.png" alt="logo" className="w-full h-full object-contain" />
         </div>
 
