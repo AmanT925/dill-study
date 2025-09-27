@@ -153,13 +153,20 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
               </h1>
               <div className="flex items-center gap-3 mt-2">
                 <Badge variant="outline">Page {liveProblem.pageNumber}</Badge>
-                <Badge className={getStatusColor(liveProblem.status)}>
-                  {liveProblem.status.replace('-', ' ')}
-                </Badge>
                 <div className="flex items-center gap-1 text-sm text-muted-foreground">
                   <Clock className="w-4 h-4" />
                   <span>{Math.floor(liveProblem.timeSpent / 60)}min</span>
                 </div>
+                <label className="flex items-center gap-2 text-sm text-muted-foreground ml-2">
+                  <input
+                    type="checkbox"
+                    checked={liveProblem.status === 'completed'}
+                    onChange={(e) => onProblemUpdate({ status: e.target.checked ? 'completed' : 'not-started' })}
+                    className="w-4 h-4 accent-green-600"
+                    aria-label="Mark problem complete"
+                  />
+                  <span className="select-none">Mark complete</span>
+                </label>
               </div>
             </div>
           </div>
