@@ -19,7 +19,10 @@ import {
   ChevronLeft,
   Settings
 } from 'lucide-react';
-import { Problem } from '@/lib/store';
+import { Problem, useStore } from '@/lib/store';
+import { getGuidance, streamGuidance } from '@/lib/aiGuidance';
+import ReactMarkdown from 'react-markdown';
+import type { Components } from 'react-markdown';
 
 interface ProblemWorkspaceProps {
   problem: Problem;
@@ -42,17 +45,65 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
 }) => {
   const [currentAttempt, setCurrentAttempt] = useState('');
   const [isListening, setIsListening] = useState(false);
+  const [isLoadingGuidance, setIsLoadingGuidance] = useState(false);
+  const addAssistantMessage = useStore(s => s.addAssistantMessage);
+  const updateProblem = useStore(s => s.updateProblem);
+  const [abortCtrl, setAbortCtrl] = useState<AbortController | null>(null);
+  // Always reflect latest problem (store may update after AI responses)
+  const liveProblem = useStore(s => s.currentProblem?.id === problem.id ? s.currentProblem : problem);
+
+  async function handleGuidanceSubmit() {
+    if (!currentAttempt.trim()) return;
+    const userText = currentAttempt.trim();
+    setCurrentAttempt('');
+    // record user message
+    addAssistantMessage(problem.id, 'user', userText);
+    setIsLoadingGuidance(true);
+    const controller = new AbortController();
+    setAbortCtrl(controller);
+    // create a placeholder assistant message for streaming
+    const tempId = Date.now();
+    const existing = liveProblem.assistantMessages || [];
+    updateProblem(problem.id, { assistantMessages: [...existing, { role: 'assistant', content: '', ts: tempId }] });
+    try {
+      let accumulated = '';
+      await streamGuidance({
+        problemText: liveProblem.text,
+        attempts: liveProblem.attempts,
+        assistantMessages: (liveProblem.assistantMessages || []).filter(m => m.ts !== tempId),
+        hintLevel: liveProblem.hintsUsed,
+        userInput: userText,
+      }, (chunk) => {
+        accumulated += chunk;
+        // update the temporary message content
+        const msgs = (useStore.getState().currentProblem?.assistantMessages || []).map(m => {
+          if (m.ts === tempId) return { ...m, content: accumulated };
+          return m;
+        });
+        updateProblem(problem.id, { assistantMessages: msgs });
+      }, { signal: controller.signal });
+    } catch (e: any) {
+      const msgs = (useStore.getState().currentProblem?.assistantMessages || []).map(m => {
+        if (m.ts === tempId) return { ...m, content: `Error: ${e.message || e}` };
+        return m;
+      });
+      updateProblem(problem.id, { assistantMessages: msgs });
+    } finally {
+      setIsLoadingGuidance(false);
+      setAbortCtrl(null);
+    }
+  }
+  // Auto-scroll chat
+  const chatEndRef = React.useRef<HTMLDivElement | null>(null);
+  React.useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+  }, [liveProblem.assistantMessages?.length, isLoadingGuidance]);
 
   const handleHintRequest = (level: number) => {
     onRequestHint(level);
   };
 
-  const handleSubmitAttempt = () => {
-    if (currentAttempt.trim()) {
-      onSubmitAttempt(currentAttempt);
-      setCurrentAttempt('');
-    }
-  };
+  // Removed explicit attempt submission per user preference.
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -60,6 +111,16 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
       case 'attempted': return 'bg-gradient-accent';
       case 'in-progress': return 'bg-gradient-primary';
       default: return 'bg-muted';
+    }
+  };
+
+  const markdownComponents: Components = {
+    code({node, className, children, ...props}) {
+      const cn = `px-1.5 py-0.5 rounded bg-background/40 border border-border text-[11px] ${className || ''}`;
+      return <code className={cn} {...props}>{children}</code>;
+    },
+    li({node, children, ...props}) {
+      return <li className="ml-4 list-disc leading-snug" {...props}>{children}</li>;
     }
   };
 
@@ -88,25 +149,25 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-workspace-foreground">
-                {problem.title || 'Problem'}
+                {liveProblem.title || 'Problem'}
               </h1>
               <div className="flex items-center gap-3 mt-2">
-                <Badge variant="outline">Page {problem.pageNumber}</Badge>
-                <Badge className={getStatusColor(problem.status)}>
-                  {problem.status.replace('-', ' ')}
+                <Badge variant="outline">Page {liveProblem.pageNumber}</Badge>
+                <Badge className={getStatusColor(liveProblem.status)}>
+                  {liveProblem.status.replace('-', ' ')}
                 </Badge>
                 <div className="flex items-center gap-1 text-sm text-muted-foreground">
                   <Clock className="w-4 h-4" />
-                  <span>{Math.floor(problem.timeSpent / 60)}min</span>
+                  <span>{Math.floor(liveProblem.timeSpent / 60)}min</span>
                 </div>
               </div>
             </div>
           </div>
 
           {/* Tags */}
-          {problem.tags.length > 0 && (
+      {liveProblem.tags.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {problem.tags.map((tag) => (
+        {liveProblem.tags.map((tag) => (
                 <Badge key={tag} variant="secondary" className="text-xs">
                   <BookOpen className="w-3 h-3 mr-1" />
                   {tag}
@@ -122,7 +183,7 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
             <FileText className="w-12 h-12 text-muted-foreground mx-auto" />
             <p className="text-sm text-muted-foreground">PDF Viewer</p>
             <p className="text-xs text-muted-foreground">
-              Problem highlighted on page {problem.pageNumber}
+              Problem highlighted on page {liveProblem.pageNumber}
             </p>
           </div>
         </Card>
@@ -132,7 +193,7 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
           <div className="space-y-3">
             <h3 className="font-medium text-workspace-foreground">Problem Text</h3>
             <Textarea
-              value={problem.text}
+              value={liveProblem.text}
               onChange={(e) => onProblemUpdate({ text: e.target.value })}
               className="min-h-[120px] resize-none bg-background"
               placeholder="Problem text will appear here..."
@@ -177,7 +238,7 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium">Hints Used</span>
               <span className="text-sm text-muted-foreground">
-                {problem.hintsUsed}/3
+                {liveProblem.hintsUsed}/3
               </span>
             </div>
             <div className="flex gap-1">
@@ -186,7 +247,7 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
                   key={level}
                   className={`
                     flex-1 h-2 rounded-full
-                    ${level <= problem.hintsUsed 
+                    ${level <= liveProblem.hintsUsed 
                       ? 'bg-gradient-accent' 
                       : 'bg-muted'
                     }
@@ -203,7 +264,7 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
             variant="outline"
             className="w-full justify-start"
             onClick={() => handleHintRequest(1)}
-            disabled={problem.hintsUsed >= 1}
+            disabled={liveProblem.hintsUsed >= 1}
           >
             <Lightbulb className="w-4 h-4 mr-2" />
             Hint 1: Concept Review
@@ -212,7 +273,7 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
             variant="outline"
             className="w-full justify-start"
             onClick={() => handleHintRequest(2)}
-            disabled={problem.hintsUsed >= 2}
+            disabled={liveProblem.hintsUsed >= 2}
           >
             <Target className="w-4 h-4 mr-2" />
             Hint 2: Next Step
@@ -221,32 +282,68 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
             variant="outline"
             className="w-full justify-start"
             onClick={() => handleHintRequest(3)}
-            disabled={problem.hintsUsed >= 3}
+            disabled={liveProblem.hintsUsed >= 3}
           >
             <MessageSquare className="w-4 h-4 mr-2" />
             Hint 3: Near Solution
           </Button>
         </div>
 
-        {/* Chat/Message Area */}
-        <Card className="flex-1 p-4 mb-4">
-          <div className="space-y-4 h-full overflow-y-auto">
-            {problem.attempts.length === 0 ? (
-              <div className="text-center text-muted-foreground py-8">
-                <Lightbulb className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                <p>Click a hint button to get started, or describe your approach below</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {problem.attempts.map((attempt, index) => (
-                  <div key={index} className="bg-muted/30 rounded-lg p-3">
-                    <p className="text-sm">{attempt}</p>
-                  </div>
-                ))}
+        {/* Unified Chat Area */}
+        <div className="flex-1 flex flex-col mb-4 min-h-0">
+          <Card className="p-4 flex-1 flex flex-col min-h-0 relative">
+            <h3 className="text-sm font-medium mb-3 text-workspace-foreground flex items-center gap-2">
+              <MessageSquare className="w-4 h-4" /> Chat
+            </h3>
+            <div className="flex-1 overflow-y-auto pr-2 space-y-4" id="chat-scroll-region">
+              {(!liveProblem.assistantMessages || liveProblem.assistantMessages.length === 0) && liveProblem.attempts.length === 0 && !isLoadingGuidance && (
+                <div className="text-center text-muted-foreground py-10 text-xs">
+                  <Lightbulb className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <p>Start by describing your approach or asking a question.</p>
+                </div>
+              )}
+              {(liveProblem.assistantMessages || [])
+                .sort((a,b)=>a.ts - b.ts)
+                .map((m, i, arr) => {
+                  const isAssistant = m.role === 'assistant';
+                  const isLast = i === arr.length - 1;
+                  return (
+                    <div key={`msg-${m.ts}-${i}`}
+                      className={`group max-w-full flex ${isAssistant ? 'justify-start' : 'justify-end'} animate-in fade-in duration-150`}
+                    >
+                      <div className={`relative rounded-lg px-3 py-2 text-[13px] leading-relaxed shadow-sm border whitespace-pre-wrap w-fit max-w-[85%] ${isAssistant ? 'bg-muted/40 border-border/60' : 'bg-gradient-primary text-background border-transparent'} ${isAssistant && isLast && isLoadingGuidance ? 'ring-1 ring-gradient-accent/60' : ''}`}>
+                        <div className="flex items-center gap-2 mb-1 opacity-70 text-[10px]">
+                          <span className={`px-1.5 py-0.5 rounded tracking-wide font-semibold ${isAssistant ? 'bg-gradient-accent text-background' : 'bg-background/30'}`}>{isAssistant ? 'AI' : 'You'}</span>
+                          <span>{new Date(m.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                        </div>
+                        {isAssistant ? (
+                          <ReactMarkdown className="prose prose-xs max-w-none prose-invert [&_p]:my-2 [&_ul]:my-2 [&_ol]:my-2 [&_code]:text-xs" components={markdownComponents}>{m.content || (isLast && isLoadingGuidance ? '...' : '')}</ReactMarkdown>
+                        ) : (
+                          <div>{m.content}</div>
+                        )}
+                        {isAssistant && isLast && isLoadingGuidance && (
+                          <div className="absolute -bottom-3 left-3 flex items-center gap-1 text-[10px] text-muted-foreground animate-pulse">
+                            <span className="w-2 h-2 rounded-full bg-gradient-primary animate-bounce" /> streaming
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              {isLoadingGuidance && !liveProblem.assistantMessages?.length && (
+                <div className="text-xs inline-flex items-center gap-2 text-muted-foreground animate-pulse">
+                  <span className="w-2 h-2 rounded-full bg-gradient-primary animate-bounce" /> AI is thinking...
+                </div>
+              )}
+              <div ref={chatEndRef} />
+            </div>
+            {abortCtrl && isLoadingGuidance && (
+              <div className="absolute top-3 right-3">
+                <Button size="sm" variant="destructive" onClick={() => abortCtrl.abort()}>Cancel</Button>
               </div>
             )}
-          </div>
-        </Card>
+          </Card>
+        </div>
 
         {/* Input Area */}
         <div className="space-y-3">
@@ -278,22 +375,24 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
               <Textarea
                 value={currentAttempt}
                 onChange={(e) => setCurrentAttempt(e.target.value)}
-                placeholder="Describe your approach or ask for help..."
+                placeholder="Describe your approach or ask for help... (Cmd/Ctrl+Enter to Ask AI)"
                 className="min-h-[80px] resize-none"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+                    e.preventDefault();
+                    handleGuidanceSubmit();
+                  }
+                }}
               />
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleSubmitAttempt}
-                  disabled={!currentAttempt.trim()}
-                  className="flex-1 bg-gradient-primary"
-                >
-                  <Send className="w-4 h-4 mr-2" />
-                  Submit Step
-                </Button>
-                <Button variant="outline">
-                  Save & Continue
-                </Button>
-              </div>
+              <Button
+                onClick={handleGuidanceSubmit}
+                disabled={isLoadingGuidance || !currentAttempt.trim()}
+                className="w-full h-12 text-base font-semibold bg-gradient-to-r from-gradient-primary to-gradient-accent hover:opacity-90"
+              >
+                <Send className="w-5 h-5 mr-2" />
+                {isLoadingGuidance ? 'Thinking…' : 'Ask AI'}
+              </Button>
+              <p className="text-[10px] text-muted-foreground text-right">Cmd/Ctrl+Enter to send. Your message is not stored as a separate attempt.</p>
             </div>
           </Card>
         </div>

@@ -9,6 +9,7 @@ export interface Problem {
   status: 'not-started' | 'in-progress' | 'attempted' | 'completed';
   hintsUsed: number;
   attempts: string[];
+  assistantMessages?: { role: 'user' | 'assistant'; content: string; ts: number }[];
   timeSpent: number;
   tags: string[];
 }
@@ -38,6 +39,7 @@ interface AppState {
   setHintLevel: (level: number) => void;
   addHint: (problemId: string) => void;
   addAttempt: (problemId: string, attempt: string) => void;
+  addAssistantMessage: (problemId: string, role: 'user' | 'assistant', content: string) => void;
 }
 
 export const useStore = create<AppState>((set, get) => ({
@@ -86,6 +88,17 @@ export const useStore = create<AppState>((set, get) => ({
       get().updateProblem(problemId, { 
         attempts: [...problem.attempts, attempt],
         status: 'attempted'
+      });
+    }
+    return state;
+  }),
+  
+  addAssistantMessage: (problemId, role, content) => set((state) => {
+    const problem = state.currentPDF?.problems.find(p => p.id === problemId);
+    if (problem) {
+      const messages = problem.assistantMessages || [];
+      get().updateProblem(problemId, {
+        assistantMessages: [...messages, { role, content, ts: Date.now() }]
       });
     }
     return state;
