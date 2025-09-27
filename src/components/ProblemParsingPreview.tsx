@@ -51,8 +51,8 @@ export const ProblemParsingPreview: React.FC<ProblemParsingPreviewProps> = ({
           </div>
           
           <Card className="aspect-[3/4] bg-card flex items-center justify-center">
-            <div className="text-center space-y-2">
-              <FileText className="w-12 h-12 text-muted-foreground mx-auto" />
+              <div className="text-center space-y-2">
+              <FileText className="w-12 h-12 mx-auto" />
               <p className="text-sm text-muted-foreground">PDF Viewer</p>
               <p className="text-xs text-muted-foreground">
                 {pdf.totalPages} pages • {pdf.fileName}

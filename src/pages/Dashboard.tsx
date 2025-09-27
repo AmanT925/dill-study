@@ -33,7 +33,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
     switch (status) {
       case 'completed': return <CheckCircle className="w-4 h-4 text-progress" />;
       case 'attempted': return <Target className="w-4 h-4 text-hint" />;
-      case 'in-progress': return <Clock className="w-4 h-4 text-primary" />;
+  case 'in-progress': return <Clock className="w-4 h-4" />;
       default: return <AlertCircle className="w-4 h-4 text-muted-foreground" />;
     }
   };
@@ -112,7 +112,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <p className="text-sm text-muted-foreground">In Progress</p>
                 <p className="text-2xl font-bold text-primary">{statusCounts.inProgress}</p>
               </div>
-              <Clock className="w-8 h-8 text-primary" />
+              <Clock className="w-8 h-8" />
             </div>
           </Card>
           
