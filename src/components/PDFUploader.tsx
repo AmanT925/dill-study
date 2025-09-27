@@ -53,11 +53,18 @@ export const PDFUploader: React.FC<PDFUploaderProps> = ({
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
       <div className="text-center space-y-4">
-        <h1 className="text-4xl font-bold bg-gradient-primary bg-clip-text text-transparent">
-          AI Problem Solver
+        <div className="mx-auto w-40 h-40 sm:w-52 sm:h-52">
+          <img src="/ui/logo.png" alt="logo" className="w-full h-full object-contain" />
+        </div>
+
+        <h1 className="text-3xl sm:text-4xl font-extrabold italic text-foreground transform -skew-x-2">
+          <span className="bg-gradient-primary bg-clip-text text-transparent">For when you're</span>
+          <br />
+          <span className="bg-gradient-secondary bg-clip-text text-transparent">in a pickle</span>
         </h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-          Upload your homework PDF and get personalized, step-by-step guidance without spoilers
+
+        <p className="text-sm sm:text-base text-muted-foreground max-w-2xl mx-auto mt-1">
+          Upload homework to reveal hints, get step-by-step solutions, and chat with an AI tutor
         </p>
       </div>
 
@@ -78,7 +85,7 @@ export const PDFUploader: React.FC<PDFUploaderProps> = ({
           {isUploading ? (
             <div className="space-y-4">
               <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
-                <Upload className="w-8 h-8 text-primary animate-pulse" />
+                <Upload className="w-8 h-8 animate-pulse" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-foreground">Processing your PDF...</h3>
@@ -88,7 +95,7 @@ export const PDFUploader: React.FC<PDFUploaderProps> = ({
           ) : (
             <div className="space-y-4">
               <div className="w-16 h-16 mx-auto bg-primary/10 rounded-full flex items-center justify-center">
-                <FileText className="w-8 h-8 text-primary" />
+                <FileText className="w-8 h-8" />
               </div>
               <div>
                 <h3 className="text-lg font-semibold text-foreground">
@@ -108,24 +115,14 @@ export const PDFUploader: React.FC<PDFUploaderProps> = ({
       </Card>
 
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-center">
-        <Button variant="outline" disabled={isUploading}>
+        <Button variant="outline" disabled={isUploading} className="uploader-btn">
           <Upload className="w-4 h-4 mr-2" />
           Import from Google Drive
         </Button>
-        <Button variant="outline" disabled={isUploading}>
+        <Button variant="outline" disabled={isUploading} className="uploader-btn">
           <FileText className="w-4 h-4 mr-2" />
           Import from URL
         </Button>
-      </div>
-
-      <div className="bg-muted/50 rounded-lg p-4 space-y-2">
-        <div className="flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-hint mt-0.5 flex-shrink-0" />
-          <div className="space-y-1 text-sm text-muted-foreground">
-            <p className="font-medium text-foreground">Privacy & Data Policy</p>
-            <p>Your PDFs are processed locally when possible. Audio recordings are optional and can be disabled in settings.</p>
-          </div>
-        </div>
       </div>
     </div>
   );

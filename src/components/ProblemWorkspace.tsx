@@ -179,8 +179,8 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
 
         {/* PDF Viewer */}
         <Card className="flex-1 bg-card flex items-center justify-center">
-          <div className="text-center space-y-2">
-            <FileText className="w-12 h-12 text-muted-foreground mx-auto" />
+            <div className="text-center space-y-2">
+            <FileText className="w-12 h-12 mx-auto" />
             <p className="text-sm text-muted-foreground">PDF Viewer</p>
             <p className="text-xs text-muted-foreground">
               Problem highlighted on page {liveProblem.pageNumber}
