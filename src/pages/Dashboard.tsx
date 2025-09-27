@@ -31,9 +31,9 @@ export const Dashboard: React.FC<DashboardProps> = ({
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'completed': return <CheckCircle className="w-4 h-4 text-progress" />;
-      case 'attempted': return <Target className="w-4 h-4 text-hint" />;
-      case 'in-progress': return <Clock className="w-4 h-4 text-primary" />;
+      case 'completed': return <CheckCircle className="w-4 h-4 text-green-600" />;
+      case 'in-progress': return <Clock className="w-4 h-4 text-yellow-500" />;
+      case 'not-started': return <AlertCircle className="w-4 h-4 text-red-600" />;
       default: return <AlertCircle className="w-4 h-4 text-muted-foreground" />;
     }
   };
@@ -102,7 +102,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <p className="text-sm text-muted-foreground">Completed</p>
                 <p className="text-2xl font-bold text-progress">{statusCounts.completed}</p>
               </div>
-              <CheckCircle className="w-8 h-8 text-progress" />
+              <CheckCircle className="w-8 h-8 text-green-600" />
             </div>
           </Card>
           
@@ -112,7 +112,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <p className="text-sm text-muted-foreground">In Progress</p>
                 <p className="text-2xl font-bold text-primary">{statusCounts.inProgress}</p>
               </div>
-              <Clock className="w-8 h-8 text-primary" />
+              <Clock className="w-8 h-8 text-yellow-500" />
             </div>
           </Card>
           
@@ -122,7 +122,7 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 <p className="text-sm text-muted-foreground">Not Started</p>
                 <p className="text-2xl font-bold text-muted-foreground">{statusCounts.notStarted}</p>
               </div>
-              <AlertCircle className="w-8 h-8 text-muted-foreground" />
+              <AlertCircle className="w-8 h-8 text-red-600" />
             </div>
           </Card>
         </div>
@@ -140,43 +140,42 @@ export const Dashboard: React.FC<DashboardProps> = ({
           </div>
           <div className="flex gap-2">
             <Button
-              variant={filterStatus === 'all' ? 'default' : 'outline'}
+              variant="outline"
               onClick={() => setFilterStatus('all')}
               size="sm"
+              className={filterStatus === 'all' ? 'bg-muted ring-1 ring-muted/40 shadow-sm' : ''}
             >
-              All
+              <span className="text-black">All</span>
             </Button>
+
             <Button
-              variant={filterStatus === 'not-started' ? 'default' : 'outline'}
+              variant="outline"
               onClick={() => setFilterStatus('not-started')}
               size="sm"
+              className={filterStatus === 'not-started' ? 'bg-red-50 ring-1 ring-red-100 shadow-sm' : ''}
             >
-              <AlertCircle className="w-4 h-4 mr-1" />
-              Not Started
+              <span className="w-2 h-2 rounded-full mr-2 bg-red-600" aria-hidden="true" />
+              <span className="text-black">Not Started</span>
             </Button>
+
             <Button
-              variant={filterStatus === 'in-progress' ? 'default' : 'outline'}
+              variant="outline"
               onClick={() => setFilterStatus('in-progress')}
               size="sm"
+              className={filterStatus === 'in-progress' ? 'bg-yellow-50 ring-1 ring-yellow-100 shadow-sm' : ''}
             >
-              <Clock className="w-4 h-4 mr-1" />
-              In Progress
+              <span className="w-2 h-2 rounded-full mr-2 bg-yellow-500" aria-hidden="true" />
+              <span className="text-black">In Progress</span>
             </Button>
+
             <Button
-              variant={filterStatus === 'attempted' ? 'default' : 'outline'}
-              onClick={() => setFilterStatus('attempted')}
-              size="sm"
-            >
-              <Target className="w-4 h-4 mr-1" />
-              Attempted
-            </Button>
-            <Button
-              variant={filterStatus === 'completed' ? 'default' : 'outline'}
+              variant="outline"
               onClick={() => setFilterStatus('completed')}
               size="sm"
+              className={filterStatus === 'completed' ? 'bg-green-50 ring-1 ring-green-100 shadow-sm' : ''}
             >
-              <CheckCircle className="w-4 h-4 mr-1" />
-              Completed
+              <span className="w-2 h-2 rounded-full mr-2 bg-green-600" aria-hidden="true" />
+              <span className="text-black">Completed</span>
             </Button>
           </div>
         </div>
@@ -212,14 +211,14 @@ export const Dashboard: React.FC<DashboardProps> = ({
                 </p>
 
                 {problem.tags.length > 0 && (
-                  <div className="flex flex-wrap gap-1">
+                    <div className="flex flex-wrap gap-1">
                     {problem.tags.slice(0, 2).map((tag) => (
-                      <Badge key={tag} variant="secondary" className="text-xs">
+                      <Badge key={tag} variant="muted" className="text-xs">
                         {tag}
                       </Badge>
                     ))}
                     {problem.tags.length > 2 && (
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="muted" className="text-xs">
                         +{problem.tags.length - 2} more
                       </Badge>
                     )}
@@ -237,9 +236,6 @@ export const Dashboard: React.FC<DashboardProps> = ({
                       {problem.hintsUsed}/3 hints
                     </span>
                   </div>
-                  <Badge className={`${getStatusColor(problem.status)} text-xs`}>
-                    {problem.status.replace('-', ' ')}
-                  </Badge>
                 </div>
               </div>
             </Card>
