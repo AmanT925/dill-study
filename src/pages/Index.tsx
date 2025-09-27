@@ -6,6 +6,10 @@ import { Dashboard } from '@/pages/Dashboard';
 import { useStore } from '@/lib/store';
 import { useToast } from '@/hooks/use-toast';
 import { ParsedPDF, Problem } from '@/lib/store';
+import { extractTextFromPDF } from '@/lib/pdfExtractor';
+import { savePDFRecord } from '@/lib/localPDFStore';
+import { parseProblems } from '@/lib/problemParser';
+import { splitProblemsWithGemini } from '@/lib/aiProblemSplitter';
 
 type AppScreen = 'upload' | 'parsing' | 'dashboard' | 'workspace';
 
@@ -30,67 +34,51 @@ const Index = () => {
 
   const handleFileUpload = async (file: File) => {
     setIsUploading(true);
-    
     try {
-      // Simulate PDF processing
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      // Mock parsed PDF data
-      const mockPDF: ParsedPDF = {
-        id: Date.now().toString(),
+      const id = Date.now().toString();
+      // 1. Extract text from the uploaded PDF
+  const { text: extractedText, pages, pageLines, totalPages } = await extractTextFromPDF(file);
+
+      // 2. Create a minimal placeholder problem so existing UI still works
+      let problems: Problem[] = [];
+      const hasGemini = !!import.meta.env.VITE_GEMINI_API_KEY;
+      if (hasGemini) {
+        try {
+          problems = await splitProblemsWithGemini({ fullText: extractedText, pageCount: totalPages });
+        } catch (e) {
+          console.warn('Gemini problem split failed, falling back to heuristic', e);
+          problems = parseProblems({ pages, pageLines });
+        }
+      } else {
+        problems = parseProblems({ pages, pageLines });
+      }
+
+      const parsed: ParsedPDF = {
+        id,
         fileName: file.name,
         fileUrl: URL.createObjectURL(file),
-        totalPages: 5,
-        extractedText: "Sample extracted text from PDF...",
-        problems: [
-          {
-            id: '1',
-            title: 'Calculus Integration Problem',
-            text: 'Find the integral of 2x² + 3x - 1 from x = 0 to x = 4. Show all steps and explain your reasoning.',
-            pageNumber: 1,
-            status: 'not-started',
-            hintsUsed: 0,
-            attempts: [],
-            timeSpent: 0,
-            tags: ['calculus', 'integration', 'polynomials'],
-          },
-          {
-            id: '2',
-            title: 'Linear Algebra Matrix Problem',
-            text: 'Given matrices A = [[1,2],[3,4]] and B = [[5,6],[7,8]], compute A×B and find the determinant of the result.',
-            pageNumber: 2,
-            status: 'not-started',
-            hintsUsed: 0,
-            attempts: [],
-            timeSpent: 0,
-            tags: ['linear-algebra', 'matrices', 'determinants'],
-          },
-          {
-            id: '3',
-            title: 'Physics Motion Problem',
-            text: 'A ball is thrown upward with an initial velocity of 20 m/s. Calculate the maximum height reached and the time taken to reach that height.',
-            pageNumber: 3,
-            status: 'not-started',
-            hintsUsed: 0,
-            attempts: [],
-            timeSpent: 0,
-            tags: ['physics', 'kinematics', 'projectile-motion'],
-          }
-        ]
+        totalPages,
+        extractedText,
+        problems,
       };
 
-      setPDF(mockPDF);
+      // 3. Persist locally (IndexedDB)
+      await savePDFRecord({ id, file, extractedText, totalPages });
+
+      // 4. Update state & navigate
+      setPDF(parsed);
       setCurrentScreen('parsing');
-      
+
       toast({
-        title: "PDF uploaded successfully!",
-        description: `Found ${mockPDF.problems.length} problems to work through.`,
+        title: 'PDF processed',
+        description: `Extracted ${extractedText.length.toLocaleString()} characters from ${totalPages} page(s).`,
       });
-    } catch (error) {
+    } catch (error: any) {
+      console.error('PDF processing failed', error);
       toast({
-        title: "Upload failed",
-        description: "There was an error processing your PDF. Please try again.",
-        variant: "destructive",
+        title: 'Upload failed',
+        description: error?.message || 'There was an error processing your PDF. Please try again.',
+        variant: 'destructive',
       });
     } finally {
       setIsUploading(false);
