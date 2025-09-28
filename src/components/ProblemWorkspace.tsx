@@ -207,7 +207,7 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
   {/* Rows 2 & 3: two-column layout where each column has a top (row2) and bottom (row3) */}
   <div className="flex flex-1 gap-3">
   {/* Left column (problem) */}
-  <div className="w-11/20 border-r border-border flex flex-col">
+  <div className="flex-1 min-w-0 border-r border-border flex flex-col">
           {/* Row 2 left: problem header */}
           <div className="p-4 h-14 flex items-center">
             <div className="flex items-center justify-between w-full">
@@ -244,7 +244,7 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
               </div>
             )}
 
-            <div className="h-[65vh]">
+            <div className="h-[65vh] w-full">
               <PDFViewer
                 fileUrl={useStore.getState().currentPDF?.fileUrl || ''}
                 totalPages={useStore.getState().currentPDF?.totalPages || liveProblem.pageNumber}
@@ -281,7 +281,7 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
         </div>
 
   {/* Right column (assistant) */}
-  <div className="w-9/20 flex gap-3 flex-col">
+  <div className="flex-1 min-w-0 flex gap-3 flex-col">
           {/* Row 2 right: assistant header + hint */}
           <div className="p-4 h-14 flex items-center">
             <div className="flex items-center justify-between w-full">
@@ -329,7 +329,7 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
 
           {/* Row 3 right: chat area and input */}
           <div className="flex-1 flex flex-col min-h-0">
-            <Card className="p-4 flex-1 flex flex-col min-h-0 relative">
+            <Card className="p-4 flex-1 flex flex-col min-h-0 relative w-full">
               <h3 className="text-sm font-medium mb-3 text-workspace-foreground flex items-center gap-2">
                 <MessageSquare className="w-4 h-4" /> Chat
               </h3>
