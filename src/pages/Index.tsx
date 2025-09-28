@@ -137,7 +137,7 @@ const Index = () => {
   switch (currentScreen) {
     case 'upload':
       return (
-        <div className="min-h-screen bg-gradient-bg flex items-center justify-center p-6">
+        <div className="min-h-[calc(100vh-4rem)] bg-gradient-bg flex items-center justify-center py-4 px-6">
           <PDFUploader 
             onFileUpload={handleFileUpload}
             isUploading={isUploading}
@@ -147,30 +147,18 @@ const Index = () => {
 
     case 'parsing':
       return currentPDF ? (
-        <ProblemParsingPreview
+        <div className="h-[calc(100vh-4rem)]">
+          <ProblemParsingPreview
           pdf={currentPDF}
           selectedProblem={selectedParsedProblem}
           onProblemSelect={handleProblemSelect}
           onEditProblem={(problem) => {
-            toast({
-              title: "Edit Problem",
-              description: "Problem editing feature coming soon!",
-            });
-          }}
-          onMergeProblems={(p1, p2) => {
-            toast({
-              title: "Merge Problems",
-              description: "Problem merging feature coming soon!",
-            });
-          }}
-          onSplitProblem={(problem) => {
-            toast({
-              title: "Split Problem",
-              description: "Problem splitting feature coming soon!",
-            });
+            setSelectedParsedProblem(problem);
+            setCurrentScreen('parsing');
           }}
           onAcceptAll={handleAcceptAllProblems}
-        />
+          />
+        </div>
       ) : null;
 
     case 'dashboard':
