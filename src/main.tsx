@@ -1,5 +1,5 @@
 import { createRoot } from "react-dom/client";
-import React from "react";
+import * as React from "react";
 import App from "./App";
 import "./index.css";
 import { AuthProvider } from "@/auth/AuthProvider";

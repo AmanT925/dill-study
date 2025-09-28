@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import * as React from 'react';
+import { useState } from 'react';
 import { PDFUploader } from '@/components/PDFUploader';
 import { ProblemParsingPreview } from '@/components/ProblemParsingPreview';
 import { ProblemWorkspace } from '@/components/ProblemWorkspace';

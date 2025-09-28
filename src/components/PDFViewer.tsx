@@ -1,4 +1,5 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import * as React from 'react';
+import { useEffect, useRef, useState, useCallback } from 'react';
 import { GlobalWorkerOptions, getDocument, PDFDocumentProxy } from 'pdfjs-dist';
 // Use the same legacy worker as pdfExtractor for consistent behavior under Vite
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
