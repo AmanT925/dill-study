@@ -1,5 +1,5 @@
 <div align="center">
-	<h1>Guide Grok</h1>
+	<h1>Dill.study</h1>
 	<p><strong>Interactive assignment & study guide workspace with AI-assisted PDF parsing, problem splitting, reminders, and email automation.</strong></p>
 	<p>
 		<a href="#quickstart">Quickstart</a> •
@@ -16,7 +16,7 @@
 ---
 
 ## Overview
-Guide Grok ingests assignment/problem PDFs, extracts problems, optionally uses AI (Gemini/OpenAI) to segment and enrich them, and provides a focused workspace for tracking progress. A reminders subsystem (local & Firebase backed) can schedule nudges and email summaries via the AgentMail SDK. Audio (ElevenLabs) & time estimation utilities round out the study experience.
+Dill.study ingests assignment/problem PDFs, extracts problems, optionally uses AI (Gemini/OpenAI) to segment and enrich them, and provides a focused workspace for tracking progress. A reminders subsystem (local & Firebase backed) can schedule nudges and email summaries via the AgentMail SDK. Audio (ElevenLabs) & time estimation utilities round out the study experience.
 
 ## Tech Stack
 | Layer | Tech |
