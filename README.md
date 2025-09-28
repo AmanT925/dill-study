@@ -182,8 +182,6 @@ You can deploy a production build anywhere that serves static assets:
 1. Build: `npm run build`
 2. Deploy `dist/` to Vercel, Netlify, Firebase Hosting, Cloudflare Pages, etc.
 
-Lovable: If using Lovable, open the project and choose Share → Publish. Custom domains can be configured under Project → Settings → Domains.
-
 ## Troubleshooting
 | Issue | Fix |
 |-------|-----|
@@ -205,10 +203,3 @@ Lovable: If using Lovable, open the project and choose Share → Publish. Custom
 * Model selection UI toggle
 * Offline-first caching of extracted problems
 * Extended email templating & digest summaries
-
-## License
-Add a license (MIT / Apache-2.0 / etc.) – currently unspecified.
-
----
-Maintained with curiosity and a focus on durable, ergonomic study workflows.
-
