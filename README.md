@@ -10,7 +10,7 @@ Prerequisites
 - Node.js (recommended: Node 20+)
 - npm (or your preferred Node package manager)
 
-Install and run locally
+Install and run locally 
  
 ```bash
 git clone <your-fork-or-repo-url>
