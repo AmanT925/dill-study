@@ -262,9 +262,13 @@ const Index = () => {
           <div className="max-w-4xl mx-auto space-y-6">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold">Your Uploaded PDFs</h1>
-              <div className="flex gap-2">
-                <button onClick={() => setCurrentScreen('upload')} className="text-sm px-3 py-1 rounded border border-border bg-background hover:bg-muted">Upload New</button>
-                <button onClick={() => setCurrentScreen('upload')} className="text-sm px-3 py-1 rounded border border-border bg-background hover:bg-muted">Back</button>
+              <div className="flex gap-2 items-center">
+                <button
+                  onClick={() => setCurrentScreen('upload')}
+                  className="inline-flex items-center px-3 py-2 rounded-md border border-border bg-gradient-primary text-primary-foreground hover:opacity-95 text-sm font-medium"
+                >
+                  Upload New
+                </button>
               </div>
             </div>
             {isLibraryLoading && <div className="text-sm text-muted-foreground">Loading…</div>}
