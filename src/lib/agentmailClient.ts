@@ -33,3 +33,30 @@ export async function sendReminder(fromInbox: string, to: string, assignmentTitl
   const text = `Hi,\n\nThis is an automated reminder that the assignment "${assignmentTitle}" is due at ${dueAt.toISOString()} (in approximately ${hoursBefore} hours).\n\nIf you've already submitted, please ignore this message.\n\n— Automated reminders`;
   return sendMessage(fromInbox, to, subject, text);
 }
+
+// Draft helpers for human-in-the-loop or scheduled sending
+export async function createDraft(inboxId: string, payload: { to: string | string[]; subject: string; text?: string }) {
+  const to = Array.isArray(payload.to) ? payload.to : [payload.to];
+  const res = await getClient().inboxes.drafts.create(inboxId, { to, subject: payload.subject, text: payload.text });
+  return res;
+}
+
+export async function getDraft(inboxId: string, draftId: string) {
+  const res = await getClient().inboxes.drafts.get(inboxId, draftId);
+  return res;
+}
+
+export async function sendDraft(
+  inboxId: string,
+  draftId: string,
+  opts: { addLabels?: string[]; removeLabels?: string[] } = {}
+) {
+  // AgentMail SDK requires an UpdateMessageRequest object as the third arg
+  const res = await getClient().inboxes.drafts.send(inboxId, draftId, opts);
+  return res;
+}
+
+export async function listDraftsOrg() {
+  const res = await getClient().drafts.list();
+  return res;
+}

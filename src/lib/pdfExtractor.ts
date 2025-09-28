@@ -2,8 +2,9 @@
 // We keep this logic isolated so it can be swapped out later (e.g. server OCR)
 
 import { GlobalWorkerOptions, getDocument } from 'pdfjs-dist';
+// Use legacy worker JS for broad compatibility under Vite dev server
 // @ts-ignore - Vite ?url import for worker (declared in types)
-import pdfjsWorker from 'pdfjs-dist/build/pdf.worker?url';
+import pdfjsWorker from 'pdfjs-dist/legacy/build/pdf.worker.min.js?url';
 
 GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
