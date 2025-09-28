@@ -69,10 +69,6 @@ const Index = () => {
       setPDF(parsed);
       setCurrentScreen('parsing');
 
-      toast({
-        title: 'PDF processed',
-        description: `Extracted ${extractedText.length.toLocaleString()} characters from ${totalPages} page(s).`,
-      });
     } catch (error: any) {
       console.error('PDF processing failed', error);
       toast({
