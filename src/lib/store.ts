@@ -74,13 +74,20 @@ export const useStore = create<AppState>((set, get) => ({
   
   setHintLevel: (level) => set({ hintLevel: level }),
   
-  addHint: (problemId) => set((state) => {
-    const problem = state.currentPDF?.problems.find(p => p.id === problemId);
+  addHint: (problemId) => {
+    // Try to update the problem in the current PDF first
+    const problem = get().currentPDF?.problems.find(p => p.id === problemId);
     if (problem) {
       get().updateProblem(problemId, { hintsUsed: problem.hintsUsed + 1 });
+      return;
     }
-    return state;
-  }),
+
+    // If currentPDF isn't available (edge cases), update currentProblem directly
+    const curr = get().currentProblem;
+    if (curr && curr.id === problemId) {
+      set({ currentProblem: { ...curr, hintsUsed: curr.hintsUsed + 1 } });
+    }
+  },
   
   addAttempt: (problemId, attempt) => set((state) => {
     const problem = state.currentPDF?.problems.find(p => p.id === problemId);
@@ -93,14 +100,24 @@ export const useStore = create<AppState>((set, get) => ({
     return state;
   }),
   
-  addAssistantMessage: (problemId, role, content) => set((state) => {
-    const problem = state.currentPDF?.problems.find(p => p.id === problemId);
+  addAssistantMessage: (problemId, role, content) => {
+    const ts = Date.now();
+
+    // If the problem exists in the current PDF, update via updateProblem
+    const problem = get().currentPDF?.problems.find(p => p.id === problemId);
     if (problem) {
       const messages = problem.assistantMessages || [];
       get().updateProblem(problemId, {
-        assistantMessages: [...messages, { role, content, ts: Date.now() }]
+        assistantMessages: [...messages, { role, content, ts }]
       });
+      return;
     }
-    return state;
-  }),
+
+    // Fallback: if currentProblem matches, update it directly
+    const curr = get().currentProblem;
+    if (curr && curr.id === problemId) {
+      const messages = curr.assistantMessages || [];
+      set({ currentProblem: { ...curr, assistantMessages: [...messages, { role, content, ts }] } });
+    }
+  },
 }));
