@@ -11,12 +11,14 @@ import { savePDFRecord, loadAllPDFRecords } from '@/lib/localPDFStore';
 import { parseProblems } from '@/lib/problemParser';
 import { splitProblemsWithGemini } from '@/lib/aiProblemSplitter';
 import { getGuidance } from '@/lib/aiGuidance';
+import { useAuth } from '@/auth/AuthProvider';
+import { attachUpload, findLatestIncompleteAssignmentForUser, requestManualReminder, findAssignmentByPdf } from '@/lib/firebaseService';
 
 type AppScreen = 'upload' | 'parsing' | 'dashboard' | 'workspace' | 'library';
 
 const Index = () => {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('upload');
-  const [library, setLibrary] = useState<{ id: string; fileName: string; savedAt: string; totalPages: number }[]>([]);
+  const [library, setLibrary] = useState<{ id: string; fileName: string; savedAt: string; totalPages: number; dueAt?: string | null }[]>([]);
   const [isLibraryLoading, setIsLibraryLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedParsedProblem, setSelectedParsedProblem] = useState<Problem | null>(null);
@@ -35,6 +37,76 @@ const Index = () => {
   } = useStore();
   
   const { toast } = useToast();
+  const { user } = useAuth();
+  const [isQueuingReminder, setIsQueuingReminder] = useState(false);
+  const [sendingPdfId, setSendingPdfId] = useState<string | null>(null);
+
+  async function sendReminderFromHome() {
+    try {
+      if (!user?.uid) {
+        toast({ title: 'Sign in required', description: 'Please sign in to send reminders.', variant: 'destructive' });
+        return;
+      }
+      setIsQueuingReminder(true);
+      // Try direct send via local server first
+      const a = await findLatestIncompleteAssignmentForUser(user.uid);
+      if (!a || !a.id) {
+        toast({ title: 'No assignment found', description: 'Create an assignment with a due date first.' });
+        return;
+      }
+      const res = await fetch('http://localhost:8787/manual-send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignmentId: a.id })
+      });
+      if (res.ok) {
+        toast({ title: 'Reminder sent', description: `Sent reminder for "${a.title}".` });
+      } else {
+        // Fallback: queue manual reminder, to be picked by batch runner
+        await requestManualReminder(a.id);
+        toast({ title: 'Reminder queued', description: `Manual reminder queued for "${a.title}".` });
+      }
+    } catch (e: any) {
+      console.error('Home manual reminder failed', e);
+      toast({ title: 'Failed to queue reminder', description: e?.message || 'Try again.', variant: 'destructive' });
+    } finally {
+      setIsQueuingReminder(false);
+    }
+  }
+
+  async function sendReminderForPdf(pdfId: string) {
+    try {
+      if (!user?.uid) {
+        toast({ title: 'Sign in required', description: 'Please sign in to send reminders.', variant: 'destructive' });
+        return;
+      }
+      setSendingPdfId(pdfId);
+      // Direct send via local server for a specific PDF
+      const res = await fetch('http://localhost:8787/manual-send', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pdfId, userId: user.uid })
+      });
+      if (res.ok) {
+        const body = await res.json();
+        toast({ title: 'Reminder sent', description: `Sent to ${body.toEmail}` });
+      } else {
+        // Fallback: find assignment and queue manual reminder
+        const a = await findAssignmentByPdf(user.uid, pdfId);
+        if (!a || !a.id) {
+          toast({ title: 'No assignment found', description: 'Set a due date for this file first.' });
+          return;
+        }
+        await requestManualReminder(a.id);
+        toast({ title: 'Reminder queued', description: `Queued for "${a.title}".` });
+      }
+    } catch (e: any) {
+      console.error('Library manual reminder failed', e);
+      toast({ title: 'Failed to send reminder', description: e?.message || 'Try again.', variant: 'destructive' });
+    } finally {
+      setSendingPdfId(null);
+    }
+  }
 
   const handleFileUpload = async (file: File) => {
     setIsUploading(true);
@@ -68,6 +140,15 @@ const Index = () => {
 
       // 3. Persist locally (IndexedDB)
       await savePDFRecord({ id, file, extractedText, totalPages });
+
+      // 3b. Link upload to signed-in user in Firestore (best-effort)
+      try {
+        if (user?.uid) {
+          await attachUpload(user.uid, { filename: file.name, size: file.size, mimetype: file.type });
+        }
+      } catch (e) {
+        console.warn('attachUpload failed (non-fatal):', e);
+      }
 
       // 4. Update state & navigate
       setPDF(parsed);
@@ -210,13 +291,28 @@ const Index = () => {
         setIsLibraryLoading(true);
         try {
           const recs = await loadAllPDFRecords();
-          setLibrary(recs.map(r => ({ id: r.id, fileName: r.fileName, savedAt: r.savedAt, totalPages: r.totalPages })));
+          const base = recs.map(r => ({ id: r.id, fileName: r.fileName, savedAt: r.savedAt, totalPages: r.totalPages }));
+          // If signed in, try to fetch due dates per PDF from Firestore assignments
+          if (user?.uid) {
+            const withDue = await Promise.all(base.map(async (b) => {
+              try {
+                const a = await findAssignmentByPdf(user.uid!, b.id);
+                const dueAt = a?.dueAt ? (typeof a.dueAt === 'string' ? a.dueAt : (a.dueAt as Date).toISOString()) : null;
+                return { ...b, dueAt };
+              } catch {
+                return { ...b, dueAt: null };
+              }
+            }));
+            setLibrary(withDue);
+          } else {
+            setLibrary(base.map(b => ({ ...b, dueAt: null })));
+          }
         } finally {
           setIsLibraryLoading(false);
         }
       })();
     }
-  }, [currentScreen]);
+  }, [currentScreen, user?.uid]);
 
   const openFromLibrary = async (id: string) => {
     // naive fetch: load record & rebuild minimal ParsedPDF (problems need re-parse)
@@ -282,8 +378,14 @@ const Index = () => {
                   <div className="text-[11px] text-muted-foreground flex gap-3">
                     <span>{new Date(rec.savedAt).toLocaleDateString()}</span>
                     <span>{rec.totalPages} pages</span>
+                    <span>{rec.dueAt ? `Due ${new Date(rec.dueAt).toLocaleString()}` : 'No due date'}</span>
                   </div>
-                  <button onClick={() => openFromLibrary(rec.id)} className="mt-2 text-xs self-start px-2 py-1 rounded bg-gradient-primary text-primary-foreground hover:opacity-90">Open</button>
+                  <div className="mt-2 flex items-center gap-2">
+                    <button onClick={() => openFromLibrary(rec.id)} className="text-xs px-2 py-1 rounded bg-gradient-primary text-primary-foreground hover:opacity-90">Open</button>
+                    <button onClick={() => sendReminderForPdf(rec.id)} disabled={sendingPdfId === rec.id} className="text-xs px-2 py-1 rounded border border-border bg-background hover:bg-muted">
+                      {sendingPdfId === rec.id ? 'Sending…' : 'Send reminder now'}
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
