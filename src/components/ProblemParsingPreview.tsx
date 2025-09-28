@@ -7,13 +7,15 @@ import {
   FileText, 
   Check, 
   Edit3, 
-  Split, 
-  Merge, 
   ChevronRight,
   Clock,
-  Hash
+  Hash,
+  Trash
 } from 'lucide-react';
-import { ParsedPDF, Problem } from '@/lib/store';
+import { ParsedPDF, Problem, useStore } from '@/lib/store';
+import { useToast } from '@/hooks/use-toast';
+import { ToastAction } from '@/components/ui/toast';
+import { useEffect, useState } from 'react';
 import { PDFViewer } from '@/components/PDFViewer';
 
 interface ProblemParsingPreviewProps {
@@ -21,8 +23,6 @@ interface ProblemParsingPreviewProps {
   selectedProblem: Problem | null;
   onProblemSelect: (problem: Problem) => void;
   onEditProblem: (problem: Problem) => void;
-  onMergeProblems: (problem1: Problem, problem2: Problem) => void;
-  onSplitProblem: (problem: Problem) => void;
   onAcceptAll: () => void;
 }
 
@@ -31,10 +31,72 @@ export const ProblemParsingPreview: React.FC<ProblemParsingPreviewProps> = ({
   selectedProblem,
   onProblemSelect,
   onEditProblem,
-  onMergeProblems,
-  onSplitProblem,
   onAcceptAll
 }) => {
+  const updateProblem = useStore((s) => s.updateProblem);
+  const setPDF = useStore((s) => s.setPDF);
+  const currentPDF = useStore((s) => s.currentPDF);
+  const currentProblem = useStore((s) => s.currentProblem);
+  const setCurrentProblem = useStore((s) => s.setCurrentProblem);
+  const { toast } = useToast();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState('');
+
+  const startEditing = (p: Problem) => {
+    setEditingId(p.id);
+    setEditingValue(p.text);
+  };
+
+  const saveEditing = (id: string) => {
+    updateProblem(id, { text: editingValue });
+    setEditingId(null);
+    toast({ title: 'Saved', description: 'Problem text updated.' });
+  };
+
+  const cancelEditing = () => {
+    setEditingId(null);
+    setEditingValue('');
+  };
+
+  const handleDeleteProblem = (id: string) => {
+    if (!currentPDF) return;
+    const index = currentPDF.problems.findIndex(p => p.id === id);
+    if (index === -1) return;
+    const deleted = currentPDF.problems[index];
+    const remaining = currentPDF.problems.filter(p => p.id !== id);
+
+    setPDF({ ...currentPDF, problems: remaining });
+    if (currentProblem?.id === id) setCurrentProblem(null);
+
+    const t = toast({
+      title: 'Deleted',
+      description: 'Problem removed.',
+      action: (
+        <Button
+          size="sm"
+          onClick={() => {
+            // restore problem at original index
+            const restored = [...(useStore.getState().currentPDF?.problems || [])];
+            restored.splice(index, 0, deleted);
+            const pdfState = useStore.getState().currentPDF;
+            if (!pdfState) return;
+            useStore.getState().setPDF({ ...pdfState, problems: restored });
+            // restore currentProblem if needed
+            useStore.getState().setCurrentProblem(deleted);
+            // dismiss the toast immediately
+            t.dismiss();
+          }}
+        >
+          Undo
+        </Button>
+      ),
+    });
+
+    // auto-dismiss after 3 seconds
+    setTimeout(() => {
+      t.dismiss();
+    }, 3000);
+  };
   return (
     <div className="flex h-screen bg-workspace">
       {/* Left side - PDF Preview */}
@@ -55,16 +117,7 @@ export const ProblemParsingPreview: React.FC<ProblemParsingPreviewProps> = ({
           />
         </div>
 
-        {selectedProblem && (
-          <Card className="bg-primary/5 border-primary/30 p-3">
-            <p className="text-sm font-medium text-primary flex items-center gap-2">
-              <Hash className="w-3 h-3" /> Page {selectedProblem.pageNumber}
-            </p>
-            <p className="text-xs text-primary/80 mt-1 line-clamp-2">
-              {selectedProblem.text.slice(0, 160)}{selectedProblem.text.length > 160 && '...'}
-            </p>
-          </Card>
-        )}
+        {/* selected problem preview removed */}
       </div>
 
       {/* Right side - Problems List */}
@@ -116,9 +169,18 @@ export const ProblemParsingPreview: React.FC<ProblemParsingPreviewProps> = ({
                     </div>
                   </div>
 
-                  <p className="text-sm text-muted-foreground line-clamp-3">
-                    {problem.text.slice(0, 150)}...
-                  </p>
+                  {editingId === problem.id ? (
+                    <textarea
+                      value={editingValue}
+                      onChange={(e) => setEditingValue(e.target.value)}
+                      className="w-full h-20 rounded border p-2 text-sm"
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ) : (
+                    <p className="text-sm text-muted-foreground line-clamp-3">
+                      {problem.text.slice(0, 150)}...
+                    </p>
+                  )}
 
                   {problem.tags.length > 0 && (
                     <div className="flex flex-wrap gap-1">
@@ -139,38 +201,35 @@ export const ProblemParsingPreview: React.FC<ProblemParsingPreviewProps> = ({
                     </div>
                     
                     <div className="flex items-center gap-1">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onEditProblem(problem);
-                        }}
-                      >
-                        <Edit3 className="w-3 h-3" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onSplitProblem(problem);
-                        }}
-                      >
-                        <Split className="w-3 h-3" />
-                      </Button>
-                      {index < pdf.problems.length - 1 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onMergeProblems(problem, pdf.problems[index + 1]);
-                          }}
-                        >
-                          <Merge className="w-3 h-3" />
-                        </Button>
+                      {editingId === problem.id ? (
+                        <>
+                          <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); cancelEditing(); }}>Cancel</Button>
+                          <Button size="sm" onClick={(e) => { e.stopPropagation(); saveEditing(problem.id); }} className="bg-primary text-primary-foreground">Save</Button>
+                        </>
+                      ) : (
+                        <>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              startEditing(problem);
+                            }}
+                          >
+                            <Edit3 className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={(e) => { e.stopPropagation(); handleDeleteProblem(problem.id); }}
+                            className="text-destructive"
+                            aria-label="Delete problem"
+                          >
+                            <Trash className="w-3 h-3" />
+                          </Button>
+                        </>
                       )}
+                      {/* Split and Merge controls intentionally removed */}
                     </div>
                   </div>
                 </div>
@@ -190,6 +249,54 @@ export const ProblemParsingPreview: React.FC<ProblemParsingPreviewProps> = ({
           </div>
         </div>
       </div>
+    </div>
+  );
+};
+
+// Small inline editor for a problem's text
+const ProblemTextEditor: React.FC<{ problem: Problem }> = ({ problem }) => {
+  const updateProblem = useStore((s) => s.updateProblem);
+  const { toast } = useToast();
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(problem.text);
+
+  useEffect(() => {
+    setValue(problem.text);
+  }, [problem.id]);
+
+  const save = () => {
+    updateProblem(problem.id, { text: value });
+    setEditing(false);
+    toast({ title: 'Saved', description: 'Problem text updated.' });
+  };
+
+  const cancel = () => {
+    setValue(problem.text);
+    setEditing(false);
+  };
+
+  return (
+    <div className="mt-2">
+      {!editing ? (
+        <div>
+          <p className="text-xs text-primary/80 mt-1 line-clamp-2">{problem.text}</p>
+          <div className="mt-2">
+            <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>Edit</Button>
+          </div>
+        </div>
+      ) : (
+        <div className="space-y-2">
+          <textarea
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            className="w-full h-28 rounded border p-2 text-sm"
+          />
+          <div className="flex gap-2">
+            <Button size="sm" onClick={save} className="bg-primary text-primary-foreground">Save</Button>
+            <Button size="sm" variant="ghost" onClick={cancel}>Cancel</Button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
