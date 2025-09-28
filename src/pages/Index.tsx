@@ -254,7 +254,6 @@ const Index = () => {
       return (
         <div className="h-[calc(100vh-4rem)] bg-gradient-bg flex flex-col items-center justify-center px-6 gap-6">
           <PDFUploader onFileUpload={handleFileUpload} isUploading={isUploading} />
-          <button onClick={() => setCurrentScreen('library')} className="text-xs text-muted-foreground underline hover:text-foreground">View past uploads</button>
         </div>
       );
     case 'library':
