@@ -43,9 +43,80 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
   const [isLoadingGuidance, setIsLoadingGuidance] = useState(false);
   const addAssistantMessage = useStore(s => s.addAssistantMessage);
   const updateProblem = useStore(s => s.updateProblem);
+  const setCurrentProblem = useStore(s => s.setCurrentProblem);
   const [abortCtrl, setAbortCtrl] = useState<AbortController | null>(null);
+  const [forceScrollKey, setForceScrollKey] = useState(0);
+  // Track per-problem 'create similar' usage in localStorage so it stays disabled after use
+  const SIMILAR_KEY = 'guide-grok:generated-similar';
+  const loadSimilarMap = () => {
+    try { return JSON.parse(localStorage.getItem(SIMILAR_KEY) || '{}') as Record<string, boolean>; } catch { return {}; }
+  };
+  const saveSimilarUsed = (id: string) => {
+    try {
+      const m = loadSimilarMap();
+      m[id] = true;
+      localStorage.setItem(SIMILAR_KEY, JSON.stringify(m));
+    } catch (e) { /* ignore */ }
+  };
+  const [similarUsed, setSimilarUsed] = useState<boolean>(() => {
+    try { const m = loadSimilarMap(); return !!m[problem.id]; } catch { return false; }
+  });
+  
   // Always reflect latest problem (store may update after AI responses)
   const liveProblem = useStore(s => s.currentProblem?.id === problem.id ? s.currentProblem : problem);
+
+  // keep similarUsed in sync when the live problem changes
+  React.useEffect(() => {
+    try { const m = loadSimilarMap(); setSimilarUsed(!!m[liveProblem.id]); } catch { setSimilarUsed(false); }
+  }, [liveProblem.id]);
+
+  // Handler for 'Create Similar' which streams an AI-generated similar problem into the chat
+  const handleCreateSimilar = async () => {
+    if (similarUsed) return;
+    // mark as used immediately (persisted)
+    saveSimilarUsed(liveProblem.id);
+    setSimilarUsed(true);
+
+    const userPrompt = `Please create a new problem that is similar in style and difficulty to the following problem. Keep it concise and self-contained.\n\nProblem:\n${liveProblem.text}`;
+
+    // Add a user-like message into the conversation so it appears in the chat
+    addAssistantMessage(liveProblem.id, 'user', 'Create a similar problem');
+
+    // create placeholder assistant message
+    const tempId = Date.now();
+    const existing = liveProblem.assistantMessages || [];
+    updateProblem(liveProblem.id, { assistantMessages: [...existing, { role: 'assistant', content: '', ts: tempId }] });
+
+    try {
+      let accumulated = '';
+      await streamGuidance({
+        problemText: liveProblem.text,
+        attempts: liveProblem.attempts,
+        assistantMessages: (liveProblem.assistantMessages || []).filter(m => m.ts !== tempId),
+        hintLevel: liveProblem.hintsUsed,
+        userInput: userPrompt,
+      }, (chunk) => {
+        accumulated += chunk;
+        const msgs = (useStore.getState().currentProblem?.assistantMessages || []).map(m => {
+          if (m.ts === tempId) return { ...m, content: accumulated };
+          return m;
+        });
+        updateProblem(liveProblem.id, { assistantMessages: msgs });
+      });
+    } catch (e: any) {
+      const msgs = (useStore.getState().currentProblem?.assistantMessages || []).map(m => {
+        if (m.ts === tempId) return { ...m, content: `Error: ${e.message || e}` };
+        return m;
+      });
+      updateProblem(liveProblem.id, { assistantMessages: msgs });
+    }
+  };
+
+  // When the selected problem's page changes, bump the forceScrollKey to force PDFViewer to scroll
+  React.useEffect(() => {
+    setForceScrollKey(k => k + 1);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [liveProblem.pageNumber]);
 
   async function handleGuidanceSubmit() {
     if (!currentAttempt.trim()) return;
@@ -178,7 +249,16 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
                 fileUrl={useStore.getState().currentPDF?.fileUrl || ''}
                 totalPages={useStore.getState().currentPDF?.totalPages || liveProblem.pageNumber}
                 highlightPage={liveProblem.pageNumber}
-                pages={[liveProblem.pageNumber]}
+                forceScrollKey={forceScrollKey}
+                onChangePage={(page) => {
+                  // If a detected problem exists on the newly visible page, update the global selection
+                  const pdfState = useStore.getState().currentPDF;
+                  const found = pdfState?.problems.find(p => p.pageNumber === page);
+                  if (found) {
+                    // update global currentProblem so other parts of the app can react
+                    setCurrentProblem(found);
+                  }
+                }}
                 className="h-full"
               />
             </div>
@@ -208,8 +288,22 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
               <div className="flex items-center gap-3">
                 <h2 className="text-lg font-semibold text-workspace-foreground">AI Assistant</h2>
               </div>
-              {/* right-aligned hint button */}
-              <div>
+              {/* right-aligned actions: Create Similar then hint button */}
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="default"
+                  size="sm"
+                  className={similarUsed
+                    ? 'flex items-center bg-muted/60 text-muted-foreground border border-border px-3 py-1 rounded'
+                    : 'flex items-center bg-emerald-600 text-white hover:bg-emerald-700 px-3 py-1 rounded shadow-sm'
+                  }
+                  onClick={handleCreateSimilar}
+                  disabled={similarUsed}
+                >
+                  <FileText className="w-4 h-4 mr-2" />
+                  <span className="text-sm">{similarUsed ? 'Created' : 'Create Similar'}</span>
+                </Button>
+
                 <Button
                   variant="default"
                   size="sm"

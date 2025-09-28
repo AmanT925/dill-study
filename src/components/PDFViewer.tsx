@@ -17,6 +17,7 @@ interface PDFViewerProps {
   highlightPage?: number;
   pages?: number[]; // optional subset of pages to render
   onChangePage?: (page: number) => void;
+  forceScrollKey?: number;
   className?: string;
 }
 
@@ -32,6 +33,7 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
   highlightPage,
   pages,
   onChangePage,
+  forceScrollKey,
   className
 }) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
@@ -82,6 +84,14 @@ export const PDFViewer: React.FC<PDFViewerProps> = ({
       scrollToPage(highlightPage);
     }
   }, [highlightPage, currentPage]);
+
+  // Force scroll when parent requests it (even if highlightPage === currentPage)
+  useEffect(() => {
+    if (!highlightPage) return;
+    // Slight delay to ensure page elements exist before scrolling
+    const t = setTimeout(() => scrollToPage(highlightPage), 80);
+    return () => clearTimeout(t);
+  }, [forceScrollKey, highlightPage]);
 
   // When pages subset changes, reset currentPage if not included
   useEffect(() => {

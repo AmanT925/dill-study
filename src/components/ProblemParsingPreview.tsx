@@ -134,7 +134,7 @@ export const ProblemParsingPreview: React.FC<ProblemParsingPreviewProps> = ({
             </div>
             <Button onClick={onAcceptAll} className="bg-gradient-secondary">
               <Check className="w-4 h-4 mr-2" />
-              Accept All
+              Next
             </Button>
           </div>
 
