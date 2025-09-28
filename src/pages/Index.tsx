@@ -174,12 +174,6 @@ const Index = () => {
             });
           }}
           onAcceptAll={handleAcceptAllProblems}
-          onRerunOCR={() => {
-            toast({
-              title: "Re-running OCR",
-              description: "OCR feature coming soon!",
-            });
-          }}
         />
       ) : null;
 

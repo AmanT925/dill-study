@@ -9,7 +9,6 @@ import {
   Edit3, 
   Split, 
   Merge, 
-  RefreshCw,
   ChevronRight,
   Clock,
   Hash
@@ -25,7 +24,6 @@ interface ProblemParsingPreviewProps {
   onMergeProblems: (problem1: Problem, problem2: Problem) => void;
   onSplitProblem: (problem: Problem) => void;
   onAcceptAll: () => void;
-  onRerunOCR: () => void;
 }
 
 export const ProblemParsingPreview: React.FC<ProblemParsingPreviewProps> = ({
@@ -35,8 +33,7 @@ export const ProblemParsingPreview: React.FC<ProblemParsingPreviewProps> = ({
   onEditProblem,
   onMergeProblems,
   onSplitProblem,
-  onAcceptAll,
-  onRerunOCR
+  onAcceptAll
 }) => {
   return (
     <div className="flex h-screen bg-workspace">
@@ -47,10 +44,6 @@ export const ProblemParsingPreview: React.FC<ProblemParsingPreviewProps> = ({
             <h2 className="text-lg font-semibold text-workspace-foreground">PDF Preview</h2>
             <p className="text-xs text-muted-foreground mt-0.5">{pdf.totalPages} pages • {pdf.fileName}</p>
           </div>
-          <Button variant="outline" size="sm" onClick={onRerunOCR}>
-            <RefreshCw className="w-4 h-4 mr-2" />
-            Re-run OCR
-          </Button>
         </div>
 
         <div className="flex-1 min-h-0">
