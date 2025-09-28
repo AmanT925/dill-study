@@ -14,7 +14,8 @@ import {
   ChevronLeft,
 } from 'lucide-react';
 import { Problem, useStore } from '@/lib/store';
-import { PDFViewer } from '@/components/PDFViewer';
+import { PDFViewer } from "./PDFViewer";
+import { Latex } from '@/components/ui/latex';
 import { getGuidance, streamGuidance } from '@/lib/aiGuidance';
 import ReactMarkdown from 'react-markdown';
 import type { Components } from 'react-markdown';
@@ -271,12 +272,17 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
             <Card className="p-4">
               <div className="space-y-3">
                 <h3 className="font-medium text-workspace-foreground">Problem Text</h3>
-                <Textarea
-                  value={liveProblem.text}
-                  onChange={(e) => onProblemUpdate({ text: e.target.value })}
-                  className="min-h-[120px] resize-none bg-background"
-                  placeholder="Problem text will appear here..."
-                />
+                <div className="space-y-3">
+                  <Textarea
+                    value={liveProblem.text}
+                    onChange={(e) => onProblemUpdate({ text: e.target.value })}
+                    className="min-h-[120px] resize-none bg-background"
+                    placeholder="Problem text will appear here..."
+                  />
+                  <div className="bg-background p-4 rounded-md border">
+                    <Latex content={liveProblem.text} block />
+                  </div>
+                </div>
                 <p className="text-xs text-muted-foreground">
                   You can edit this text if character recognition wasn't perfect
                 </p>

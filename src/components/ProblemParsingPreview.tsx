@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ToastAction } from '@/components/ui/toast';
 import { useEffect, useState } from 'react';
 import { PDFViewer } from '@/components/PDFViewer';
+import { Latex } from '@/components/ui/latex';
 
 interface ProblemParsingPreviewProps {
   pdf: ParsedPDF;
@@ -177,9 +178,9 @@ export const ProblemParsingPreview: React.FC<ProblemParsingPreviewProps> = ({
                       onClick={(e) => e.stopPropagation()}
                     />
                   ) : (
-                    <p className="text-sm text-muted-foreground line-clamp-3">
-                      {problem.text.slice(0, 150)}...
-                    </p>
+                    <div className="text-sm text-muted-foreground line-clamp-3">
+                      <Latex content={problem.text.slice(0, 150) + "..."} />
+                    </div>
                   )}
 
                   {problem.tags.length > 0 && (
@@ -279,7 +280,9 @@ const ProblemTextEditor: React.FC<{ problem: Problem }> = ({ problem }) => {
     <div className="mt-2">
       {!editing ? (
         <div>
-          <p className="text-xs text-primary/80 mt-1 line-clamp-2">{problem.text}</p>
+          <div className="text-xs text-primary/80 mt-1 line-clamp-2">
+            <Latex content={problem.text} />
+          </div>
           <div className="mt-2">
             <Button size="sm" variant="ghost" onClick={() => setEditing(true)}>Edit</Button>
           </div>
