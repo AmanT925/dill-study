@@ -137,7 +137,7 @@ const Index = () => {
   switch (currentScreen) {
     case 'upload':
       return (
-        <div className="min-h-[calc(100vh-4rem)] bg-gradient-bg flex items-center justify-center py-4 px-6">
+        <div className="h-[calc(100vh-4rem)] bg-gradient-bg flex items-center justify-center px-6">
           <PDFUploader 
             onFileUpload={handleFileUpload}
             isUploading={isUploading}
