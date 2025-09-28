@@ -27,7 +27,7 @@ export default function Header() {
         <div className="flex items-center gap-3">
           <button onClick={() => { navigate('/'); postScreenChange('dashboard'); }} className="flex items-center gap-2 group">
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-md bg-gradient-primary text-primary-foreground font-bold shadow-sm group-hover:scale-105 transition-transform">D</span>
-            <span className="font-semibold tracking-tight text-sm text-foreground">Dill</span>
+            <span className="tracking-tight text-base text-foreground" style={{ fontFamily: '"Cooper Black", "Cooper", serif', fontWeight: 600 }}>Dill</span>
           </button>
           <nav className="hidden md:flex items-center gap-1 ml-4">
             {navItems.map(item => (
