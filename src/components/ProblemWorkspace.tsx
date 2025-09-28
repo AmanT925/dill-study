@@ -188,6 +188,9 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
     },
     li({node, children, ...props}) {
       return <li className="ml-4 list-disc leading-snug" {...props}>{children}</li>;
+    },
+    p({node, children, ...props}) {
+      return <p {...props}><Latex content={children as string} /></p>;
     }
   };
 
@@ -364,9 +367,16 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
                             <span>{new Date(m.ts).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
                           </div>
                           {isAssistant ? (
-                            <ReactMarkdown className="prose prose-xs max-w-none prose-invert [&_p]:my-2 [&_ul]:my-2 [&_ol]:my-2 [&_code]:text-xs" components={markdownComponents}>{m.content || (isLast && isLoadingGuidance ? '...' : '')}</ReactMarkdown>
+                            <div className="prose prose-xs max-w-none prose-invert [&_p]:my-2 [&_ul]:my-2 [&_ol]:my-2 [&_code]:text-xs">
+                              {m.content.split('\n\n').map((paragraph, i) => (
+                                <div key={i} className="my-2">
+                                  <Latex content={paragraph.trim()} />
+                                </div>
+                              ))}
+                              {isLast && isLoadingGuidance && '...'}
+                            </div>
                           ) : (
-                            <div>{m.content}</div>
+                            <div><Latex content={m.content} /></div>
                           )}
                           {isAssistant && isLast && isLoadingGuidance && (
                             <div className="absolute -bottom-3 left-3 flex items-center gap-1 text-[10px] text-muted-foreground animate-pulse">
