@@ -216,6 +216,11 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
               </h1>
               <div className="flex items-center gap-3">
                 <Badge variant="outline">Page {liveProblem.pageNumber}</Badge>
+                {liveProblem.estimatedMinutes && (
+                  <Badge variant="secondary" title="Estimated time to solve" className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" /> ~{liveProblem.estimatedMinutes}m
+                  </Badge>
+                )}
                 <label className="flex items-center gap-2 text-sm text-muted-foreground ml-2">
                   <input
                     type="checkbox"

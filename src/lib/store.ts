@@ -12,6 +12,7 @@ export interface Problem {
   assistantMessages?: { role: 'user' | 'assistant'; content: string; ts: number }[];
   timeSpent: number;
   tags: string[];
+  estimatedMinutes?: number; // heuristic expected completion time
 }
 
 export interface ParsedPDF {
