@@ -185,6 +185,24 @@ const Index = () => {
     setCurrentProblem(null);
   };
 
+  // Listen for nav bar screen change events
+  React.useEffect(() => {
+    function handler(e: any) {
+      const screen = e?.detail?.screen as AppScreen | undefined;
+      if (!screen) return;
+      if (screen === 'upload') {
+        handleNewUpload();
+      } else if (screen === 'library') {
+        setCurrentScreen('library');
+      } else if (screen === 'dashboard') {
+        if (currentPDF) setCurrentScreen('dashboard');
+      }
+    }
+    window.addEventListener('app:navigate-screen', handler);
+    return () => window.removeEventListener('app:navigate-screen', handler);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentPDF]);
+
   // Load library when visiting library screen
   React.useEffect(() => {
     if (currentScreen === 'library') {
