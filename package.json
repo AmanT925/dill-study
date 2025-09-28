@@ -9,7 +9,16 @@
     "build:dev": "vite build --mode development",
     "lint": "eslint .",
     "test": "vitest",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "agentmail:test": "node scripts/send_agentmail_test.mjs",
+    "reminders:prepare": "node scripts/prepare_sample_assignments.mjs",
+    "reminders:live": "TEST_MINUTES_MODE=true TEST_WINDOWS=1,2 TEST_WINDOW_MINUTES=1 TEST_DRY_RUN=false node scripts/send_reminders_live.mjs",
+    "reminders:firebase": "TEST_MINUTES_MODE=true TEST_WINDOWS=1,2 TEST_WINDOW_MINUTES=1 node scripts/reminders_firebase.mjs",
+    "drafts:send": "node scripts/drafts_create_and_send.mjs",
+    "drafts:schedule": "node scripts/drafts_schedule.mjs",
+    "seed:firebase": "node scripts/seed_firebase_assignments.mjs --minutes 2",
+    "reminders:firebase:run": "TEST_MINUTES_MODE=true TEST_WINDOWS=1,2 TEST_WINDOW_MINUTES=1 node scripts/reminders_firebase.mjs",
+    "manual-send:server": "node scripts/manual_send_server.mjs"
   },
   "dependencies": {
     "@google/generative-ai": "^0.11.0",

@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import { GlobalWorkerOptions, getDocument, PDFDocumentProxy } from 'pdfjs-dist';
+// Use the same legacy worker as pdfExtractor for consistent behavior under Vite
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore - worker asset handled by Vite
-import pdfWorker from 'pdfjs-dist/build/pdf.worker?url';
+// @ts-ignore - worker asset handled by Vite and declared in src/types/pdfjs-worker.d.ts
+import pdfWorker from 'pdfjs-dist/legacy/build/pdf.worker.min.js?url';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { Card } from '@/components/ui/card';
