@@ -195,9 +195,9 @@ export const ProblemParsingPreview: React.FC<ProblemParsingPreviewProps> = ({
                   <Separator />
 
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground" title="Estimated time to solve">
                       <Clock className="w-3 h-3" />
-                      <span>Est. {Math.ceil(problem.text.length / 100)} min</span>
+                      <span>Est. {problem.estimatedMinutes ?? '?'} min</span>
                     </div>
                     
                     <div className="flex items-center gap-1">

@@ -1,4 +1,5 @@
 import { Problem } from './store';
+import { estimateProblemTime } from './timeEstimator';
 
 interface SplitParams {
   fullText: string;
@@ -111,17 +112,22 @@ export async function splitProblemsWithGemini({ fullText, pageCount, model, maxP
   if (!Array.isArray(arr)) throw new Error('Gemini output not an array');
 
   const now = Date.now();
-  return arr.slice(0, maxProblems).map((p, i) => ({
-    id: p.id || `ai-problem-${now}-${i + 1}`,
-    title: sanitize(p.title) || `Problem ${i + 1}`,
-    text: p.text?.trim() || '',
-    pageNumber: p.pageNumber && p.pageNumber >= 1 ? p.pageNumber : 1,
-    status: 'not-started' as const,
-    hintsUsed: 0,
-    attempts: [],
-    timeSpent: 0,
-    tags: Array.isArray(p.tags) ? p.tags.slice(0, 8) : []
-  })).filter(p => p.text.length > 0);
+  return arr.slice(0, maxProblems).map((p, i) => {
+    const text = p.text?.trim() || '';
+    const tags = Array.isArray(p.tags) ? p.tags.slice(0, 8) : [];
+    return {
+      id: p.id || `ai-problem-${now}-${i + 1}`,
+      title: sanitize(p.title) || `Problem ${i + 1}`,
+      text,
+      pageNumber: p.pageNumber && p.pageNumber >= 1 ? p.pageNumber : 1,
+      status: 'not-started' as const,
+      hintsUsed: 0,
+      attempts: [],
+      timeSpent: 0,
+      tags,
+      estimatedMinutes: estimateProblemTime(text, tags)
+    };
+  }).filter(p => p.text.length > 0);
 }
 
 function buildPrompt(text: string, pageCount: number, maxProblems: number, truncated: boolean) {

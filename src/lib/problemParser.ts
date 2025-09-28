@@ -7,6 +7,7 @@
 // If no headings are detected, returns one problem containing the whole document.
 
 import { Problem } from './store';
+import { estimateProblemTime } from './timeEstimator';
 
 interface ParseOptions {
   pages?: string[];        // legacy support (will be merged into single lines array)
@@ -36,6 +37,7 @@ export function parseProblems({ pages = [], pageLines, maxProblems = 200 }: Pars
     const rawText = current.lines.join('\n').trim();
     if (!rawText) return; // skip empty
     const title = deriveTitle(current.headingLine, rawText, ++problemCounter);
+    const tags = inferTags(rawText, title);
     problems.push({
       id: current.id,
       title,
@@ -45,7 +47,8 @@ export function parseProblems({ pages = [], pageLines, maxProblems = 200 }: Pars
       hintsUsed: 0,
       attempts: [],
       timeSpent: 0,
-      tags: inferTags(rawText, title)
+      tags,
+      estimatedMinutes: estimateProblemTime(rawText, tags)
     });
   }
 
@@ -96,6 +99,7 @@ export function parseProblems({ pages = [], pageLines, maxProblems = 200 }: Pars
   if (problems.length === 0) {
     // Fallback: single problem with entire document
     const allText = effectivePageLines.map(ls => ls.join('\n')).join('\n\n').trim();
+    const tags = inferTags(allText, 'Full Document');
     problems.push({
       id: 'problem-1',
       title: 'Full Document',
@@ -105,7 +109,8 @@ export function parseProblems({ pages = [], pageLines, maxProblems = 200 }: Pars
       hintsUsed: 0,
       attempts: [],
       timeSpent: 0,
-      tags: inferTags(allText, 'Full Document')
+      tags,
+      estimatedMinutes: estimateProblemTime(allText, tags)
     });
   }
 

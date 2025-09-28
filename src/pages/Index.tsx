@@ -7,15 +7,17 @@ import { useStore } from '@/lib/store';
 import { useToast } from '@/hooks/use-toast';
 import { ParsedPDF, Problem } from '@/lib/store';
 import { extractTextFromPDF } from '@/lib/pdfExtractor';
-import { savePDFRecord } from '@/lib/localPDFStore';
+import { savePDFRecord, loadAllPDFRecords } from '@/lib/localPDFStore';
 import { parseProblems } from '@/lib/problemParser';
 import { splitProblemsWithGemini } from '@/lib/aiProblemSplitter';
 import { getGuidance } from '@/lib/aiGuidance';
 
-type AppScreen = 'upload' | 'parsing' | 'dashboard' | 'workspace';
+type AppScreen = 'upload' | 'parsing' | 'dashboard' | 'workspace' | 'library';
 
 const Index = () => {
   const [currentScreen, setCurrentScreen] = useState<AppScreen>('upload');
+  const [library, setLibrary] = useState<{ id: string; fileName: string; savedAt: string; totalPages: number }[]>([]);
+  const [isLibraryLoading, setIsLibraryLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [selectedParsedProblem, setSelectedParsedProblem] = useState<Problem | null>(null);
   
@@ -183,15 +185,88 @@ const Index = () => {
     setCurrentProblem(null);
   };
 
+  // Load library when visiting library screen
+  React.useEffect(() => {
+    if (currentScreen === 'library') {
+      (async () => {
+        setIsLibraryLoading(true);
+        try {
+          const recs = await loadAllPDFRecords();
+          setLibrary(recs.map(r => ({ id: r.id, fileName: r.fileName, savedAt: r.savedAt, totalPages: r.totalPages })));
+        } finally {
+          setIsLibraryLoading(false);
+        }
+      })();
+    }
+  }, [currentScreen]);
+
+  const openFromLibrary = async (id: string) => {
+    // naive fetch: load record & rebuild minimal ParsedPDF (problems need re-parse)
+    // For now we re-parse text to derive problems again (could be improved by persisting problems separately)
+    setIsLibraryLoading(true);
+    try {
+      const recs = await loadAllPDFRecords();
+      const rec = recs.find(r => r.id === id);
+      if (!rec) return;
+      // Reconstruct fileUrl from stored base64
+      const fileBlob = await (await fetch(rec.fileBase64)).blob();
+      const fileUrl = URL.createObjectURL(fileBlob);
+      // Re-run heuristic parse (Gemini optional)
+      let problems: Problem[] = [];
+      const hasGemini = !!import.meta.env.VITE_GEMINI_API_KEY;
+      try {
+        if (hasGemini) {
+          problems = await splitProblemsWithGemini({ fullText: rec.extractedText, pageCount: rec.totalPages });
+        } else {
+          problems = parseProblems({ pages: rec.extractedText.split(/===== Page \d+ =====/).slice(1) });
+        }
+      } catch {
+        problems = parseProblems({ pages: rec.extractedText.split(/===== Page \d+ =====/).slice(1) });
+      }
+      setPDF({ id: rec.id, fileName: rec.fileName, fileUrl, totalPages: rec.totalPages, extractedText: rec.extractedText, problems });
+      setCurrentScreen('dashboard');
+    } finally {
+      setIsLibraryLoading(false);
+    }
+  };
+
   // Render current screen
   switch (currentScreen) {
     case 'upload':
       return (
-        <div className="h-[calc(100vh-4rem)] bg-gradient-bg flex items-center justify-center px-6">
-          <PDFUploader 
-            onFileUpload={handleFileUpload}
-            isUploading={isUploading}
-          />
+        <div className="h-[calc(100vh-4rem)] bg-gradient-bg flex flex-col items-center justify-center px-6 gap-6">
+          <PDFUploader onFileUpload={handleFileUpload} isUploading={isUploading} />
+          <button onClick={() => setCurrentScreen('library')} className="text-xs text-muted-foreground underline hover:text-foreground">View past uploads</button>
+        </div>
+      );
+    case 'library':
+      return (
+        <div className="h-[calc(100vh-4rem)] overflow-auto p-8 bg-gradient-bg">
+          <div className="max-w-4xl mx-auto space-y-6">
+            <div className="flex items-center justify-between">
+              <h1 className="text-2xl font-bold">Your Uploaded PDFs</h1>
+              <div className="flex gap-2">
+                <button onClick={() => setCurrentScreen('upload')} className="text-sm px-3 py-1 rounded border border-border bg-background hover:bg-muted">Upload New</button>
+                <button onClick={() => setCurrentScreen('upload')} className="text-sm px-3 py-1 rounded border border-border bg-background hover:bg-muted">Back</button>
+              </div>
+            </div>
+            {isLibraryLoading && <div className="text-sm text-muted-foreground">Loading…</div>}
+            {!isLibraryLoading && library.length === 0 && (
+              <div className="text-sm text-muted-foreground">No prior uploads stored locally.</div>
+            )}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {library.map(rec => (
+                <div key={rec.id} className="border border-border rounded-lg p-4 bg-background/60 backdrop-blur-sm flex flex-col gap-2 hover:shadow-sm">
+                  <div className="font-medium text-sm truncate" title={rec.fileName}>{rec.fileName}</div>
+                  <div className="text-[11px] text-muted-foreground flex gap-3">
+                    <span>{new Date(rec.savedAt).toLocaleDateString()}</span>
+                    <span>{rec.totalPages} pages</span>
+                  </div>
+                  <button onClick={() => openFromLibrary(rec.id)} className="mt-2 text-xs self-start px-2 py-1 rounded bg-gradient-primary text-primary-foreground hover:opacity-90">Open</button>
+                </div>
+              ))}
+            </div>
+          </div>
         </div>
       );
 
