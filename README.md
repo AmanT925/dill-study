@@ -1,8 +1,8 @@
 # Dill.study - AI Study Assistant
 
-**MHacks 2025 Team Project** |
+**MHacks 2025 Team Project** 
 
-An intelligent study workspace that parses PDF assignments into individual problems and provides AI-guided assistance with automated email reminders. Built collaboratively with my teammate who developed the PDF viewer and core UI components.
+An intelligent study workspace that parses PDF assignments into individual problems and provides AI-guided assistance with automated email reminders. Built collaboratively with my teammates who developed the PDF viewer and core UI components.
 
 ## My Contributions
 
